@@ -19,10 +19,17 @@ func main() {
 
 	for n, f := range files {
 		fmt.Fprintln(os.Stdout, "//", n, ":")
-		f.FormatTo(os.Stdout)
+		f.WriteTo(os.Stdout)
 	}
 }
 
+// Read output from "gc -m". E.g.:
+//	main.go:91: can inline NewSourceFile
+//	main.go:80: inlining call to NewSourceFile
+//	main.go:21: main ... argument does not escape
+//	main.go:26: leaking param: in_
+//	main.go:37: parseCompilerLine line does not escape
+// Optimization comments are stored in "files" map
 func ReadCompilerOutput(in_ io.Reader) {
 	in := bufio.NewReader(in_)
 	for l, prefix, err := in.ReadLine(); err == nil; l, prefix, err = in.ReadLine() {
@@ -34,6 +41,7 @@ func ReadCompilerOutput(in_ io.Reader) {
 	}
 }
 
+// Parse single line of "gc -m" output
 func parseCompilerLine(line string) {
 	defer func() {
 		err := recover()
@@ -48,7 +56,8 @@ func parseCompilerLine(line string) {
 	GetSourceFile(filename).AddMsg(lineNo, info)
 }
 
-func (f *SourceFile) FormatTo(out io.Writer) {
+// Print source code + optimization messages to out
+func (f *SourceFile) WriteTo(out io.Writer) {
 	in_, err := os.Open(f.Name)
 	if err != nil {
 		Stderr(err)
