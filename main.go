@@ -6,15 +6,24 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"runtime"
 	"strings"
 )
 
 var (
-	files map[string]*SourceFile = make(map[string]*SourceFile)
+	flag_version   *bool = flag.Bool("V", false, "print version and exit")
+	flag_writeback *bool = flag.Bool("w", false, "write result to source files instead of stdout")
 )
+
+var files map[string]*SourceFile = make(map[string]*SourceFile)
 
 func main() {
 	flag.Parse()
+
+	if *flag_version {
+		fmt.Println("go-optview 0\nGo", runtime.Version())
+		return
+	}
 	ReadCompilerOutput(os.Stdin)
 
 	for n, f := range files {
