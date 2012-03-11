@@ -18,14 +18,37 @@ func main() {
 	flag.Parse()
 	readFrom(os.Stdin)
 
-	for f := range files {
-		fmt.Println(`//`, f, ":")
+	for n, f := range files {
+		fmt.Println(`//`, n, ":")
+
+		in_, err := os.Open(n)
+		if err != nil {
+			stderr(err)
+			continue
+		}
+		in := bufio.NewReader(in_)
+
+		lineNo := 1
+		for l, prefix, err := in.ReadLine(); err == nil; l, prefix, err = in.ReadLine() {
+			if prefix {
+				panic("Enlarge your buffer!")
+			}
+			fmt.Print(string(l))
+			if opts, ok := f.Opts[lineNo]; ok {
+				fmt.Print("//", opts)
+			}
+			fmt.Println()
+			lineNo++
+		}
 	}
 }
 
 func readFrom(in_ io.Reader) {
 	in := bufio.NewReader(in_)
-	for l, _, err := in.ReadLine(); err == nil; l, _, err = in.ReadLine() {
+	for l, prefix, err := in.ReadLine(); err == nil; l, prefix, err = in.ReadLine() {
+		if prefix {
+			panic("Enlarge your buffer!")
+		}
 		line := string(l)
 		parseLine(line)
 	}
