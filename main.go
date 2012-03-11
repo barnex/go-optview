@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strconv"
 	"strings"
 )
 
@@ -31,11 +30,11 @@ func ReadCompilerOutput(in_ io.Reader) {
 			panic("Enlarge your buffer!")
 		}
 		line := string(l)
-		parseLine(line)
+		parseCompilerLine(line)
 	}
 }
 
-func parseLine(line string) {
+func parseCompilerLine(line string) {
 	defer func() {
 		err := recover()
 		if err != nil {
@@ -46,19 +45,7 @@ func parseLine(line string) {
 	filename := words[0]
 	lineNo := Atoi(words[1])
 	info := words[2]
-	GetSourceFile(filename).AddOpt(lineNo, info)
-}
-
-func Stderr(msg ...interface{}) {
-	fmt.Fprintln(os.Stderr, msg...)
-}
-
-func Atoi(a string) int {
-	i, err := strconv.Atoi(a)
-	if err != nil {
-		panic(err)
-	}
-	return i
+	GetSourceFile(filename).AddMsg(lineNo, info)
 }
 
 func (f *SourceFile) FormatTo(out io.Writer) {
@@ -75,7 +62,7 @@ func (f *SourceFile) FormatTo(out io.Writer) {
 			panic("Enlarge your buffer!")
 		}
 		fmt.Fprint(out, string(l))
-		if opts, ok := f.Opts[lineNo]; ok {
+		if opts, ok := f.Msg[lineNo]; ok {
 			fmt.Print("//", opts)
 		}
 		fmt.Fprintln(out)
@@ -83,6 +70,8 @@ func (f *SourceFile) FormatTo(out io.Writer) {
 	}
 }
 
+// Get source file form files map, 
+// allocate if net yet present
 func GetSourceFile(fileName string) *SourceFile {
 	if file, ok := files[fileName]; ok {
 		return file
@@ -92,15 +81,32 @@ func GetSourceFile(fileName string) *SourceFile {
 	return file
 }
 
+// Stores the optimization messages of a single source file
+type SourceFile struct {
+	Name string           // file name
+	Msg  map[int][]string // optimization messages per line number
+}
+
 func NewSourceFile(fileName string) *SourceFile {
 	return &SourceFile{fileName, make(map[int][]string)}
 }
 
-type SourceFile struct {
-	Name string
-	Opts map[int][]string
+// Add optimization message to source file
+func (this *SourceFile) AddMsg(line int, msg string) {
+	if !contains(this.Msg[line], msg) {
+		this.Msg[line] = append(this.Msg[line], msg)
+	}
 }
 
-func (this *SourceFile) AddOpt(line int, opt string) {
-	this.Opts[line] = append(this.Opts[line], opt)
+// Checks if list already contains str
+func contains(list []string, str string) bool {
+	if list == nil {
+		return false
+	}
+	for _, s := range list {
+		if s == str {
+			return true
+		}
+	}
+	return false
 }
