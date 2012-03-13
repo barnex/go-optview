@@ -13,6 +13,7 @@ import (
 var (
 	flag_version   *bool = flag.Bool("V", false, "print version and exit")
 	flag_writeback *bool = flag.Bool("w", false, "write result to source files instead of stdout")
+	flag_prefix *string = flag.String("prefix", "///", "prefix for optimization messages")
 )
 
 var files map[string]*SourceFile = make(map[string]*SourceFile)
@@ -81,7 +82,7 @@ func (f *SourceFile) WriteTo(out io.Writer) {
 		}
 		fmt.Fprint(out, string(l))
 		if opts, ok := f.Msg[lineNo]; ok {
-			fmt.Print("//", opts)
+			fmt.Print(*flag_prefix, opts)
 		}
 		fmt.Fprintln(out)
 		lineNo++
@@ -109,7 +110,7 @@ func NewSourceFile(fileName string) *SourceFile {
 	return &SourceFile{fileName, make(map[int][]string)}
 }
 
-// Add optimization message to source file
+// Add optimization message to sourceFile struct
 func (this *SourceFile) AddMsg(line int, msg string) {
 	if !contains(this.Msg[line], msg) {
 		this.Msg[line] = append(this.Msg[line], msg)
