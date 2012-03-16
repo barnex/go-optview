@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"flag"
 	"fmt"
 	"io"
@@ -29,14 +30,8 @@ func main() {
 
 	for name, f := range files {
 		if *flag_writeback {
-			out, err := os.OpenFile(name, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0666)
-			if err != nil {
-				fmt.Fprintln(os.Stderr, err)
-			} else {
-				fmt.Fprintln(os.Stderr, name)
-				f.WriteTo(out)
-				out.Close()
-			}
+			buf := new(bytes.Buffer)
+			f.WriteTo(buf)
 		} else {
 			fmt.Fprintln(os.Stdout, *flag_prefix, name, ":")
 			f.WriteTo(os.Stdout)
