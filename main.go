@@ -32,6 +32,9 @@ func main() {
 		if *flag_writeback {
 			buf := new(bytes.Buffer)
 			f.WriteTo(buf)
+			out, err := os.OpenFile(name, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0666)
+			Stderr(err)
+			out.Write(buf.Bytes())
 		} else {
 			fmt.Fprintln(os.Stdout, *flag_prefix, name, ":")
 			f.WriteTo(os.Stdout)
