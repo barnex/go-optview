@@ -11,9 +11,9 @@ import (
 )
 
 var (
-	flag_version   *bool = flag.Bool("V", false, "print version and exit")
-	flag_writeback *bool = flag.Bool("w", false, "write result to source files instead of stdout")
-	flag_prefix *string = flag.String("prefix", "///", "prefix for optimization messages")
+	flag_version   *bool   = flag.Bool("V", false, "print version and exit")
+	flag_writeback *bool   = flag.Bool("w", false, "write result to source files instead of stdout")
+	flag_prefix    *string = flag.String("prefix", "//"+"/", "prefix for optimization messages")
 )
 
 var files map[string]*SourceFile = make(map[string]*SourceFile)
@@ -80,13 +80,26 @@ func (f *SourceFile) WriteTo(out io.Writer) {
 		if prefix {
 			panic("Enlarge your buffer!")
 		}
-		fmt.Fprint(out, string(l))
+
+		// print source line
+		fmt.Fprint(out, cleanSourceLine(string(l)))
+
+		// print messages
 		if opts, ok := f.Msg[lineNo]; ok {
 			fmt.Print(*flag_prefix, opts)
 		}
 		fmt.Fprintln(out)
 		lineNo++
 	}
+}
+
+// remove previous optview comment from line
+func cleanSourceLine(line string) string {
+	i := strings.Index(line, *flag_prefix)
+	if i != -1 {
+		return line[:i]
+	}
+	return line
 }
 
 // Get source file form files map, 
