@@ -22,6 +22,7 @@ var files map[string]*SourceFile = make(map[string]*SourceFile)
 
 func main() {
 	flag.Parse()
+	// TODO: optview 6g -m *.go 
 
 	if *flag_version {
 		fmt.Println("go-optview 0\nGo", runtime.Version())
@@ -32,7 +33,7 @@ func main() {
 	for name, f := range files {
 		if *flag_writeback {
 			buf := new(bytes.Buffer)
-			f.WriteTo(buf)
+			f.WriteTo(buf) // TODO: return err, don't writeback on err!
 			out, _ := os.OpenFile(name, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0666)
 			out.Write(buf.Bytes())
 		} else {
