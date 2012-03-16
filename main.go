@@ -27,9 +27,18 @@ func main() {
 	}
 	ReadCompilerOutput(os.Stdin)
 
-	for n, f := range files {
-		fmt.Fprintln(os.Stdout, "//", n, ":")
-		f.WriteTo(os.Stdout)
+	for name, f := range files {
+		if *flag_writeback {
+			out, err := os.OpenFile(name+"pt", os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0666)
+			if err != nil {
+				fmt.Fprintln(os.Stderr, err)
+			} else {
+				f.WriteTo(out)
+			}
+		} else {
+			fmt.Fprintln(os.Stdout, *flag_prefix, name, ":")
+			f.WriteTo(os.Stdout)
+		}
 	}
 }
 
@@ -86,7 +95,7 @@ func (f *SourceFile) WriteTo(out io.Writer) {
 
 		// print messages
 		if opts, ok := f.Msg[lineNo]; ok {
-			fmt.Print(*flag_prefix, opts)
+			fmt.Fprint(out, *flag_prefix, opts)
 		}
 		fmt.Fprintln(out)
 		lineNo++
