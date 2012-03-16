@@ -29,11 +29,11 @@ func main() {
 
 	for name, f := range files {
 		if *flag_writeback {
-			fmt.Fprintln(os.Stderr, name)
 			out, err := os.OpenFile(name, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0666)
 			if err != nil {
 				fmt.Fprintln(os.Stderr, err)
 			} else {
+				fmt.Fprintln(os.Stderr, name)
 				f.WriteTo(out)
 				out.Close()
 			}
