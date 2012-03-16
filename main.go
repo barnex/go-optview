@@ -93,14 +93,20 @@ func (f *SourceFile) WriteTo(out io.Writer) {
 		}
 
 		// print source line
-		fmt.Fprint(out, cleanSourceLine(string(l)))
+		Check(fmt.Fprint(out, cleanSourceLine(string(l))))
 
 		// print messages
 		if opts, ok := f.Msg[lineNo]; ok {
-			fmt.Fprint(out, *flag_prefix, opts)
+			Check(fmt.Fprint(out, *flag_prefix, opts))
 		}
 		fmt.Fprintln(out)
 		lineNo++
+	}
+}
+
+func Check(n int, err error) {
+	if err != nil {
+		panic(err)
 	}
 }
 
