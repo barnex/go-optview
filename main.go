@@ -15,7 +15,7 @@ var (
 	flag_version   *bool   = flag.Bool("V", false, "print version and exit")
 	flag_writeback *bool   = flag.Bool("w", false, "write result to source files instead of stdout")
 	flag_clean     *bool   = flag.Bool("c", false, "clean existing optimization messages from source")
-	flag_prefix    *string = flag.String("prefix", "//"+"/", "prefix for optimization messages")
+	flag_prefix    *string = flag.String("prefix", "//"+"←", "prefix for optimization messages")
 )
 
 var files map[string]*SourceFile = make(map[string]*SourceFile)
