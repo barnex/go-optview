@@ -14,6 +14,7 @@ import (
 var (
 	flag_version   *bool   = flag.Bool("V", false, "print version and exit")
 	flag_writeback *bool   = flag.Bool("w", false, "write result to source files instead of stdout")
+	flag_clean     *bool   = flag.Bool("c", false, "clean existing optimization messages from source")
 	flag_prefix    *string = flag.String("prefix", "//"+"/", "prefix for optimization messages")
 )
 
@@ -23,19 +24,19 @@ func main() {
 	flag.Parse()
 
 	if *flag_version {
-		fmt.Println("go-optview 0\nGo", runtime.Version()) ///[ inlining call to runtime.Version  main ... argument does not escape]
+		fmt.Println("go-optview 0\nGo", runtime.Version())
 		return
 	}
 	ReadCompilerOutput(os.Stdin)
 
 	for name, f := range files {
 		if *flag_writeback {
-			buf := new(bytes.Buffer) ///[ new(bytes.Buffer) escapes to heap]
+			buf := new(bytes.Buffer)
 			f.WriteTo(buf)
 			out, _ := os.OpenFile(name, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0666)
-			out.Write(buf.Bytes()) ///[ inlining call to Bytes]
+			out.Write(buf.Bytes())
 		} else {
-			fmt.Fprintln(os.Stdout, *flag_prefix, name, ":") ///[ main ... argument does not escape]
+			fmt.Fprintln(os.Stdout, *flag_prefix, name, ":")
 			f.WriteTo(os.Stdout)
 		}
 	}
@@ -48,7 +49,7 @@ func main() {
 //	main.go:26: leaking param: in_
 //	main.go:37: parseCompilerLine line does not escape
 // Optimization comments are stored in "files" map
-func ReadCompilerOutput(in_ io.Reader) { ///[ leaking param: in_]
+func ReadCompilerOutput(in_ io.Reader) {
 	in := bufio.NewReader(in_)
 	for l, prefix, err := in.ReadLine(); err == nil; l, prefix, err = in.ReadLine() {
 		if prefix {
@@ -60,11 +61,11 @@ func ReadCompilerOutput(in_ io.Reader) { ///[ leaking param: in_]
 }
 
 // Parse single line of "gc -m" output
-func parseCompilerLine(line string) { ///[ parseCompilerLine line does not escape]
-	defer func() { ///[ parseCompilerLine func literal does not escape]
+func parseCompilerLine(line string) {
+	defer func() {
 		err := recover()
 		if err != nil {
-			Stderr(`optview:`, err, ` while parsing "`, line, `"`) ///[ parseCompilerLine ... argument does not escape  _func_001 ... argument does not escape]
+			Stderr(`optview:`, err, ` while parsing "`, line, `"`)
 		}
 	}()
 	words := strings.SplitN(line, ":", 3)
@@ -75,10 +76,10 @@ func parseCompilerLine(line string) { ///[ parseCompilerLine line does not escap
 }
 
 // Print source code + optimization messages to out
-func (f *SourceFile) WriteTo(out io.Writer) { ///[ leaking param: out  (*SourceFile).WriteTo f does not escape]
+func (f *SourceFile) WriteTo(out io.Writer) {
 	in_, err := os.Open(f.Name)
 	if err != nil {
-		Stderr(err) ///[ (*SourceFile).WriteTo ... argument does not escape]
+		Stderr(err)
 		return
 	}
 	in := bufio.NewReader(in_)
@@ -90,25 +91,27 @@ func (f *SourceFile) WriteTo(out io.Writer) { ///[ leaking param: out  (*SourceF
 		}
 
 		// print source line
-		Check(fmt.Fprint(out, cleanSourceLine(string(l)))) ///[ (*SourceFile).WriteTo ... argument does not escape]
+		Check(fmt.Fprint(out, cleanSourceLine(string(l))))
 
 		// print messages
-		if opts, ok := f.Msg[lineNo]; ok {
-			Check(fmt.Fprint(out, *flag_prefix, opts)) ///[ (*SourceFile).WriteTo ... argument does not escape]
+		if !*flag_clean {
+			if opts, ok := f.Msg[lineNo]; ok {
+				Check(fmt.Fprint(out, *flag_prefix, opts))
+			}
 		}
 		fmt.Fprintln(out)
 		lineNo++
 	}
 }
 
-func Check(n int, err error) { ///[ leaking param: err]
+func Check(n int, err error) {
 	if err != nil {
 		panic(err)
 	}
 }
 
 // remove previous optview comment from line
-func cleanSourceLine(line string) string { ///[ leaking param: line]
+func cleanSourceLine(line string) string {
 	i := strings.Index(line, *flag_prefix)
 	if i != -1 {
 		return line[:i]
@@ -118,11 +121,11 @@ func cleanSourceLine(line string) string { ///[ leaking param: line]
 
 // Get source file form files map, 
 // allocate if net yet present
-func GetSourceFile(fileName string) *SourceFile { ///[ leaking param: fileName]
+func GetSourceFile(fileName string) *SourceFile {
 	if file, ok := files[fileName]; ok {
 		return file
 	}
-	file := NewSourceFile(fileName) ///[ inlining call to NewSourceFile  make(map[int][]string, 0) escapes to heap  &SourceFile literal escapes to heap]
+	file := NewSourceFile(fileName)
 	files[fileName] = file
 	return file
 }
@@ -133,19 +136,19 @@ type SourceFile struct {
 	Msg  map[int][]string // optimization messages per line number
 }
 
-func NewSourceFile(fileName string) *SourceFile { ///[ can inline NewSourceFile  leaking param: fileName]
-	return &SourceFile{fileName, make(map[int][]string)} ///[ make(map[int][]string, 0) escapes to heap  &SourceFile literal escapes to heap]
+func NewSourceFile(fileName string) *SourceFile {
+	return &SourceFile{fileName, make(map[int][]string)}
 }
 
 // Add optimization message to sourceFile struct
-func (this *SourceFile) AddMsg(line int, msg string) { ///[ leaking param: msg  (*SourceFile).AddMsg this does not escape]
+func (this *SourceFile) AddMsg(line int, msg string) {
 	if !contains(this.Msg[line], msg) {
 		this.Msg[line] = append(this.Msg[line], msg)
 	}
 }
 
 // Checks if list already contains str
-func contains(list []string, str string) bool { ///[ contains list does not escape  contains str does not escape]
+func contains(list []string, str string) bool {
 	if list == nil {
 		return false
 	}
