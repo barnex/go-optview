@@ -6,7 +6,9 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"log"
 	"os"
+	"os/exec"
 	"runtime"
 	"strings"
 )
@@ -22,13 +24,31 @@ var files map[string]*SourceFile = make(map[string]*SourceFile)
 
 func main() {
 	flag.Parse()
-	// TODO: optview 6g -m *.go 
+	args := flag.Args()
 
 	if *flag_version {
-		fmt.Println("go-optview 0\nGo", runtime.Version())
+		fmt.Println("go-optview 0.2\nGo", runtime.Version())
 		return
 	}
-	ReadCompilerOutput(os.Stdin)
+
+	var in io.Reader
+
+	if len(args) > 0 {
+		var err error
+		cmd := exec.Command("go", append([]string{"tool"}, args...)...)
+		in, err = cmd.StdoutPipe()
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = cmd.Start()
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		in = os.Stdin
+	}
+
+	ReadCompilerOutput(in)
 
 	for name, f := range files {
 		if *flag_writeback {
