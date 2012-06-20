@@ -3,7 +3,7 @@ Go-optview takes the output of gc -m (compiler's optimization decissions) and pr
 
 Use:
 
-	go-optview [flags] [compiler command]
+	go-optview [flags] [gofiles]
 
 Flags:
 
@@ -12,21 +12,19 @@ Flags:
 	-prefix: prefix for optimization messages, default "//←"
 	-w: write result to source files instead of stdout
 
-The compiler command is typically "6g -m", "go tool" is automatically prefixed. If none is specified, go-optview reads gc output from stdin.
-
 Usage examples:
 
 Write optimization messages back to source files:
-	go-optview -w 6g -m *.go
+	go-optview -w *.go
 
 Clean source files:
-	go-optview -w -c 6g -m *.go
+	go-optview -w -c *.go
 
 Write optimization messages to stdout:
-	go-optview 6g -m *.go
+	go-optview *.go
 
 Use of stdin:
-	go tool 6g -m | go-optview -w
+	go tool 6g -m *.go | go-optview -w
 
 Example output:
 
