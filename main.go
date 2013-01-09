@@ -27,28 +27,21 @@ func main() {
 	args := flag.Args()
 
 	if *flag_version {
-		fmt.Println("go-optview 0.3\nGo", runtime.Version())
+		fmt.Println("go-optview 0.4\nGo", runtime.Version())
 		return
 	}
 
 	var in io.Reader
 
-	GC := map[string]string{"386": "8g", "amd64": "6g", "arm": "5g"}[runtime.GOARCH]
-	PKGPATH := os.Getenv("GOPATH") + "/pkg/" + runtime.GOOS + "_" + runtime.GOARCH
-
-	if len(args) > 0 {
-		var err error
-		cmd := exec.Command("go", append([]string{"tool", GC, "-m", "-I", PKGPATH}, args...)...)
-		in, err = cmd.StdoutPipe()
-		if err != nil {
-			log.Fatal(err)
-		}
-		err = cmd.Start()
-		if err != nil {
-			log.Fatal(err)
-		}
-	} else {
-		in = os.Stdin
+	var err error
+	cmd := exec.Command("go", append([]string{"build", "-gcflags", "-m"}, args...)...)
+	in, err = cmd.StdoutPipe()
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = cmd.Start()
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	ReadCompilerOutput(in)
@@ -80,7 +73,9 @@ func ReadCompilerOutput(in_ io.Reader) {
 			panic("Enlarge your buffer!")
 		}
 		line := string(l)
-		parseCompilerLine(line)
+		if !strings.HasPrefix(line, "#") {
+			parseCompilerLine(line)
+		}
 	}
 }
 
@@ -143,7 +138,7 @@ func cleanSourceLine(line string) string {
 	return line
 }
 
-// Get source file form files map, 
+// Get source file form files map,
 // allocate if net yet present
 func GetSourceFile(fileName string) *SourceFile {
 	if file, ok := files[fileName]; ok {
